@@ -112,39 +112,25 @@ export function useRadio() {
     fadeTimerRef.current = setTimeout(tick, interval)
   }, [])
 
-  const playTrack = useCallback((track: RadioTrack, offset: number, vol: number) => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.src = track.preview
-    audio.volume = 0
-    audio.currentTime = 0
-    audio.play().then(() => {
-      if (offset > 0.5 && offset < TRACK_DURATION - 1) {
-        try { audio.currentTime = offset } catch {}
-      }
-      fadeTo(vol, 600)
-    }).catch(() => {})
-  }, [fadeTo])
+const playTrack = useCallback((track: RadioTrack, offset: number, vol: number) => {
+  const audio = audioRef.current
+  if (!audio) return
 
-  // Channel clock — advances ONLY when radio is off.
-  // When on+playing, the audio element is the source of truth (synced via timeupdate).
-  // When on+paused, everything is frozen.
-  useEffect(() => {
-    const tick = () => {
-      const now = Date.now()
-      const delta = (now - lastTickRef.current) / 1000
-      lastTickRef.current = now
-      if (isOnRef.current || tracksRef.current.length === 0) return
-      channelPosRef.current += delta
-      if (channelPosRef.current >= TRACK_DURATION) {
-        channelPosRef.current = 0
-        setCurrentIndex((i) => (i + 1) % tracksRef.current.length)
-      }
-    }
-    lastTickRef.current = Date.now()
-    const interval = setInterval(tick, 250)
-    return () => clearInterval(interval)
-  }, [])
+  console.log("Track:", track)
+  console.log("Preview:", track.preview)
+
+  audio.src = track.preview
+  audio.volume = 0
+  audio.currentTime = 0
+
+  audio.play()
+    .then(() => {
+      console.log("PLAY OK")
+    })
+    .catch((err) => {
+      console.error("PLAY ERROR:", err)
+    })
+}, [])
 
   // Audio event listeners
   useEffect(() => {
