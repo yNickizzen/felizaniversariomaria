@@ -51,28 +51,30 @@ function makeBoxTex(variant: 'side' | 'front' | 'top'): THREE.CanvasTexture {
   }
 
   if (variant === 'front') {
-    // Heart-shaped cutout: text erased inside heart, clean background remains
-    const cx = W / 2, cy = H * 0.44
-    const r = 78
+    const cx = W / 2, cy = H * 0.46
+    const r = 180  // big heart — fills most of the face
+
+    // Clip to heart and flood with the same background — erases the text inside
     ctx.save()
     ctx.beginPath()
-    ctx.moveTo(cx, cy + r * 0.80)
-    ctx.bezierCurveTo(cx - r * 0.46, cy + r * 1.10, cx - r * 1.22, cy + r * 0.16, cx - r * 1.02, cy - r * 0.28)
-    ctx.bezierCurveTo(cx - r * 0.82, cy - r * 0.84, cx - r * 0.22, cy - r * 1.04, cx, cy - r * 0.50)
-    ctx.bezierCurveTo(cx + r * 0.22, cy - r * 1.04, cx + r * 0.82, cy - r * 0.84, cx + r * 1.02, cy - r * 0.28)
-    ctx.bezierCurveTo(cx + r * 1.22, cy + r * 0.16, cx + r * 0.46, cy + r * 1.10, cx, cy + r * 0.80)
+    ctx.moveTo(cx, cy + r * 0.78)
+    ctx.bezierCurveTo(cx - r * 0.46, cy + r * 1.08, cx - r * 1.22, cy + r * 0.14, cx - r * 1.02, cy - r * 0.28)
+    ctx.bezierCurveTo(cx - r * 0.82, cy - r * 0.84, cx - r * 0.22, cy - r * 1.02, cx, cy - r * 0.48)
+    ctx.bezierCurveTo(cx + r * 0.22, cy - r * 1.02, cx + r * 0.82, cy - r * 0.84, cx + r * 1.02, cy - r * 0.28)
+    ctx.bezierCurveTo(cx + r * 1.22, cy + r * 0.14, cx + r * 0.46, cy + r * 1.08, cx, cy + r * 0.78)
     ctx.closePath()
     ctx.clip()
+    // Fill with the exact same background color — clears all text inside
     ctx.fillStyle = '#f8f7f3'
     ctx.fillRect(0, 0, W, H)
     ctx.restore()
 
-    // "N + M" inside heart
-    ctx.fillStyle = 'rgba(22,20,40,0.92)'
-    ctx.font = 'italic bold 32px Georgia, serif'
+    // "N + M" in dark ink, centred inside the heart
+    ctx.fillStyle = 'rgba(22,20,40,0.90)'
+    ctx.font = 'italic bold 62px Georgia, "Times New Roman", serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText('N + M', cx, cy + 6)
+    ctx.fillText('N + M', cx, cy + 14)
     ctx.textAlign = 'left'
     ctx.textBaseline = 'alphabetic'
   }
@@ -245,7 +247,7 @@ export function GiftBox() {
   const YEL = <meshStandardMaterial color="#ddc030" roughness={0.40} metalness={0.15}/>
 
   return (
-    <group position={BOX_POS} onClick={handleClick}>
+    <group position={BOX_POS} rotation={[0, Math.PI / 2, 0]} onClick={handleClick}>
       {/* ── BOX BODY (5 faces, no top) ── */}
       <mesh position={[0, WALL / 2, 0]} receiveShadow>
         <boxGeometry args={[S, WALL, S]}/>
@@ -301,26 +303,26 @@ export function GiftBox() {
           <boxGeometry args={[S + WALL * 2, RT, RW]}/>
           {YEL}
         </mesh>
-        {/* Bow — two paper-loop style half-toruses */}
-        <mesh position={[-0.058, LID_T + 0.052, 0]} rotation={[0, 0, 0.52]}>
+        {/* Bow — two paper-loop style half-toruses, sitting on lid */}
+        <mesh position={[-0.054, LID_T + 0.030, 0]} rotation={[0, 0, 0.52]}>
           <torusGeometry args={[0.044, 0.019, 8, 24, Math.PI]}/>
           {YEL}
         </mesh>
-        <mesh position={[0.058, LID_T + 0.052, 0]} rotation={[0, 0, -0.52]}>
+        <mesh position={[0.054, LID_T + 0.030, 0]} rotation={[0, 0, -0.52]}>
           <torusGeometry args={[0.044, 0.019, 8, 24, Math.PI]}/>
           {YEL}
         </mesh>
         {/* Centre knot */}
-        <mesh position={[0, LID_T + 0.022, 0]}>
+        <mesh position={[0, LID_T + 0.006, 0]}>
           <sphereGeometry args={[0.021, 8, 8]}/>
           {YEL}
         </mesh>
         {/* Tails */}
-        <mesh position={[-0.052, LID_T + 0.009, 0]} rotation={[0, 0, 0.36]}>
+        <mesh position={[-0.052, LID_T + 0.003, 0]} rotation={[0, 0, 0.36]}>
           <boxGeometry args={[0.062, 0.015, 0.013]}/>
           {YEL}
         </mesh>
-        <mesh position={[0.052, LID_T + 0.009, 0]} rotation={[0, 0, -0.36]}>
+        <mesh position={[0.052, LID_T + 0.003, 0]} rotation={[0, 0, -0.36]}>
           <boxGeometry args={[0.062, 0.015, 0.013]}/>
           {YEL}
         </mesh>
