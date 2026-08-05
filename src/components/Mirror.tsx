@@ -15,8 +15,8 @@ const BASE_ARM = 0.19
 const BASE_H   = 0.052
 const BASE_W   = POST_W
 
-const POS_X = 2.1
-const POS_Z = 0.85
+const POS_X = 5.5
+const POS_Z = 0.55
 
 const DEFAULT_ROT: [number, number, number] = [0.05, 0, 0]
 
@@ -131,7 +131,7 @@ export function Mirror({ onClick }: { onClick?: () => void }) {
   const GOLD = <meshStandardMaterial color="#c9a060" roughness={0.28} metalness={0.72} />
 
   return (
-    <group position={[POS_X, 0, POS_Z]} scale={1.2}>
+    <group position={[POS_X, 0, POS_Z]} rotation={[0, 0, 0]} scale={1.2}>
 
       {/* ── STAND ──────────────────────────────── */}
 

@@ -23,8 +23,8 @@ const BED_TOP=LEG_H+FRAME_H+MATT_H+0.06
 const BED_GRP_X=0.13+BED_LEN/2,BED_GRP_Z=ROOM_D-0.03-BED_WID/2
 function ResponsiveCamera(){const {camera,size,controls}=useThree() as unknown as {camera:THREE.PerspectiveCamera;size:{width:number;height:number};controls:any};const applyFov=useCallback(()=>{const aspect=size.width/size.height;const baseHalfTan=Math.tan((BASE_FOV*Math.PI)/180)/2;let fovV=aspect>=REFERENCE_ASPECT?BASE_FOV:2*Math.atan(baseHalfTan*(REFERENCE_ASPECT/aspect))*180/Math.PI;fovV=Math.min(Math.max(fovV,35),85);camera.fov=fovV;camera.aspect=aspect;camera.updateProjectionMatrix()},[camera,size]);useEffect(()=>{applyFov();const dir=new THREE.Vector3(0.35,0.28,1).normalize();camera.position.copy(ROOM_CENTER).add(dir.multiplyScalar(CAMERA_DISTANCE));camera.lookAt(ROOM_CENTER);if(controls){controls.target.copy(ROOM_CENTER);controls.update()}},[applyFov,camera,controls]);useEffect(()=>{applyFov()},[applyFov]);return null}
 
-const MIRROR_FOCUS_POS=new THREE.Vector3(2.1,1.15,3.4)
-const MIRROR_FOCUS_LOOK=new THREE.Vector3(2.1,1.15,0.85)
+const MIRROR_FOCUS_POS=new THREE.Vector3(5.5,1.5,3.2)
+const MIRROR_FOCUS_LOOK=new THREE.Vector3(5.5,1.15,0.6)
 const CAMERA_HOME_DIR=new THREE.Vector3(0.35,0.28,1).normalize()
 function MirrorFocus(){const {camera}=useThree() as unknown as {camera:THREE.PerspectiveCamera};useFrame((_,delta)=>{const s=Math.min(delta*2.2,1);camera.position.lerp(MIRROR_FOCUS_POS,s);camera.lookAt(MIRROR_FOCUS_LOOK)});return null}
 function CameraReturn(){const {camera}=useThree() as unknown as {camera:THREE.PerspectiveCamera};const target=useMemo(()=>ROOM_CENTER.clone().add(CAMERA_HOME_DIR.clone().multiplyScalar(CAMERA_DISTANCE)),[]);useFrame((_,delta)=>{const s=Math.min(delta*2.2,1);camera.position.lerp(target,s);camera.lookAt(ROOM_CENTER)});return null}
