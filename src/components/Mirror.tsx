@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 const MIRROR_W = 0.80
@@ -110,11 +111,26 @@ function makeFrameTex(): THREE.CanvasTexture {
   return t
 }
 
-export function Mirror({ onClick }: { onClick?: () => void }) {
+export function Mirror({ onClick, isNight }: { onClick?: () => void; isNight?: boolean }) {
   const outerShape = useMemo(() => makeOuterShape(),  [])
   const glassShape = useMemo(() => makeGlassShape(),  [])
   const frameTex   = useMemo(() => makeFrameTex(),    [])
   const mirrorTex  = useMemo(() => makeMirrorTex(),    [])
+
+  const glassMatRef = useRef<THREE.MeshStandardMaterial>(null)
+  const nightTarget = useRef(0)
+  const nightCurrent = useRef(0)
+
+  useEffect(() => { nightTarget.current = isNight ? 1 : 0 }, [isNight])
+
+  useFrame((_, delta) => {
+    const d = nightTarget.current - nightCurrent.current
+    if (Math.abs(d) < 0.001) { nightCurrent.current = nightTarget.current; return }
+    nightCurrent.current += d * Math.min(delta * 3, 1)
+    if (glassMatRef.current) {
+      glassMatRef.current.emissiveIntensity = 0.85 - nightCurrent.current * 0.65
+    }
+  })
 
   const frameGeo = useMemo(() => new THREE.ExtrudeGeometry(outerShape, {
     depth: FRAME_D,
@@ -184,6 +200,7 @@ export function Mirror({ onClick }: { onClick?: () => void }) {
         <mesh geometry={glassGeo} position={[0, 0, FRAME_D + 0.001]}
           onClick={(e) => { e.stopPropagation(); onClick?.() }}>
           <meshStandardMaterial
+            ref={glassMatRef}
             emissiveMap={mirrorTex}
             emissive="#ffffff"
             emissiveIntensity={0.85}
