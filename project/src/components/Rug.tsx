@@ -1,5 +1,0 @@
-import { useMemo } from 'react'
-import * as THREE from 'three'
-import { ROOM_W, ROOM_D } from './Room'
-function crochetTex(){const c=document.createElement('canvas');c.width=512;c.height=512;const ctx=c.getContext('2d')!;ctx.fillStyle='#3d8099';ctx.fillRect(0,0,512,512);const sw=28,sh=24,cols=Math.ceil(512/sw),rows=Math.ceil(512/sh);for(let row=0;row<rows;row++){const yOff=row*sh,xOff=(row%2)*(sw/2);for(let col=0;col<cols+1;col++){const x=col*sw-xOff,y=yOff;ctx.strokeStyle='rgba(0,0,0,0.18)';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x,y+sh);ctx.lineTo(x+sw/2,y+2);ctx.lineTo(x+sw,y+sh);ctx.stroke()}};const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t}
-export function Rug(){const t=useMemo(()=>crochetTex(),[]);return(<group position={[ROOM_W/2,0.012,ROOM_D/2]}><mesh receiveShadow castShadow><boxGeometry args={[3.6,0.025,3.6]}/><meshStandardMaterial map={t} color="#3d8099" roughness={0.92} metalness={0}/></mesh></group>)}
