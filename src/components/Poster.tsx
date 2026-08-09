@@ -1,8 +1,9 @@
 import { useTexture } from '@react-three/drei'
-import { useMemo, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
+const POSTER_W = 0.75 * 1.4 * 1.2
 const POSTER_H = 1.1 * 1.4 * 1.2
 
 export function Poster({ isNight }: { isNight: boolean }) {
@@ -21,7 +22,7 @@ export function Poster({ isNight }: { isNight: boolean }) {
     }
   })
 
-  const tex = useTexture('/3 copy copy.png', (t) => {
+  const tex = useTexture('/3.png', (t) => {
     t.colorSpace = THREE.SRGBColorSpace
     t.minFilter = THREE.LinearFilter
     t.magFilter = THREE.LinearFilter
@@ -30,17 +31,12 @@ export function Poster({ isNight }: { isNight: boolean }) {
     t.needsUpdate = true
   })
 
-  const posterWidth = useMemo(() => {
-    const image = tex.image as HTMLImageElement
-    return POSTER_H * (image.width / image.height)
-  }, [tex])
-
   return (
     <group>
       <pointLight ref={lightRef} position={[5.6, 3.2, 1.8]} intensity={3.2} distance={3.5} decay={2} color="#ffe8c8" />
       <mesh position={[5.6, 2.95, 0.004]}>
-        <planeGeometry args={[posterWidth, POSTER_H]} />
-        <meshStandardMaterial map={tex} roughness={1} metalness={0} transparent alphaTest={0.05} side={THREE.DoubleSide} />
+        <planeGeometry args={[POSTER_W, POSTER_H]} />
+        <meshStandardMaterial map={tex} roughness={1} metalness={0} transparent alphaTest={0.05} />
       </mesh>
     </group>
   )

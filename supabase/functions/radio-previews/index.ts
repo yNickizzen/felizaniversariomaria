@@ -75,6 +75,10 @@ async function searchDeezer(q: string): Promise<DeezerTrack | null> {
   return tracks.find((t) => t.preview && t.preview.length > 0) || null;
 }
 
+/**
+ * Check if a file already exists in Supabase Storage.
+ * If it does, return the permanent public URL.
+ */
 async function checkStoredFile(slug: string): Promise<string | null> {
   const { data } = await supabase.storage
     .from("radio-audio")
@@ -89,6 +93,10 @@ async function checkStoredFile(slug: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * Download the MP3 from Deezer and upload it to Supabase Storage.
+ * Returns the permanent public URL of the stored file.
+ */
 async function downloadAndStore(slug: string, deezerUrl: string): Promise<string | null> {
   try {
     const resp = await fetch(deezerUrl);
@@ -119,9 +127,17 @@ async function downloadAndStore(slug: string, deezerUrl: string): Promise<string
   }
 }
 
+/**
+ * Get a permanent URL for a track:
+ * 1. Check if the MP3 is already stored in Supabase Storage → use that URL
+ * 2. If not, fetch fresh from Deezer, download the MP3, upload to Storage
+ * 3. Cache the metadata + permanent URL in the database
+ */
 async function resolveTrack(slug: string, id: number, fallbackQuery: string): Promise<RadioTrack | null> {
+  // Step 1: Check storage first
   const storedUrl = await checkStoredFile(slug);
   if (storedUrl) {
+    // Load metadata from DB (it should already be there from a previous run)
     const { data: cached } = await supabase
       .from("radio_tracks")
       .select("slug, title, artist, album, preview, cover")
@@ -129,16 +145,19 @@ async function resolveTrack(slug: string, id: number, fallbackQuery: string): Pr
       .maybeSingle();
 
     if (cached) {
+      // Return with the permanent storage URL (not the stale Deezer URL)
       return { ...cached, preview: storedUrl } as RadioTrack;
     }
   }
 
+  // Step 2: Fetch fresh from Deezer
   let t = await fetchTrackById(id);
   if (!t) t = await searchDeezer(fallbackQuery);
   if (!t) return null;
 
+  // Step 3: Download the MP3 and store it permanently
   const permanentUrl = await downloadAndStore(slug, t.preview);
-  const finalUrl = permanentUrl || t.preview;
+  const finalUrl = permanentUrl || t.preview; // fallback to Deezer URL if storage fails
 
   const track: RadioTrack = {
     slug,
@@ -149,6 +168,7 @@ async function resolveTrack(slug: string, id: number, fallbackQuery: string): Pr
     cover: coverUrl(t),
   };
 
+  // Cache metadata in DB
   await supabase
     .from("radio_tracks")
     .upsert(

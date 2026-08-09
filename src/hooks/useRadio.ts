@@ -75,8 +75,6 @@ export function useRadio() {
 
   useEffect(() => {
     fetchTracks()
-    const interval = setInterval(fetchTracks, 3600000)
-    return () => clearInterval(interval)
   }, [fetchTracks])
 
   useEffect(() => {
