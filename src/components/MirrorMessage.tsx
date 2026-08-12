@@ -33,9 +33,9 @@ export function MirrorMessage({ closing, onClose }: { closing: boolean; onClose:
       <div className={`mirror-msg${closing ? ' closing' : ''}`}>
         <div className="mirror-msg-card">
           <div className="mirror-msg-icon">✨</div>
-          <div className="mirror-msg-title">Você é perfeita</div>
+          <div className="mirror-msg-title">Você é perfeita amor</div>
           <div className="mirror-msg-text">
-            Cada detalhe seu é único e especial. Seu sorriso ilumina qualquer ambiente, sua força inspira quem está perto, e sua beleza — <em>por dentro e por fora</em> — não tem comparação. Nunca duvide disso.
+            Você é infinitamente mais bonita do que consegue sequer enxergar, sou apaixonado por cada detalhe seu, eu te amo minha gatinha perfeita! <em>E te amarei até meu último suspiro</em> Feliz aniversário amor
           </div>
           {showClose && (
             <button className="mirror-msg-close" onClick={onClose}>voltar</button>
@@ -45,3 +45,4 @@ export function MirrorMessage({ closing, onClose }: { closing: boolean; onClose:
     </>
   )
 }
+

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { RadioTrack } from './useRadio'
+import type { RadioTrack } from '../hooks/useRadio'
 
 interface RadioHudProps {
   track: RadioTrack | null
