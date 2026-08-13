@@ -45,4 +45,3 @@ export function MirrorMessage({ closing, onClose }: { closing: boolean; onClose:
     </>
   )
 }
-

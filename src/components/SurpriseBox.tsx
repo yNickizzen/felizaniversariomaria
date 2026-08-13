@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect } from 'react'
 import * as THREE from 'three'
 import { useFrame, useLoader } from '@react-three/fiber'
-import pillowAssetUrl from './almofada.jpeg'
+import pillowAssetUrl from './almofadaimagem.jpg'
+import { pillowGeo } from './Bed'
 
 // Box dimensions — large shipping box
 const BOX_W = 1.30
@@ -10,10 +11,11 @@ const BOX_H = 0.76
 const WALL = 0.03
 const LID_T = 0.04
 
-// Pillow scaled up for visibility (real: 27cm x 37cm)
-const PILLOW_W = 0.72
-const PILLOW_H = 0.98
-const PILLOW_T = 0.16
+// Pillow uses the same geometry as the bed pillow (exported from Bed.tsx)
+const PILLOW_W = 0.44
+const PILLOW_H = 0.76
+const PILLOW_T = 0.13
+const PILLOW_OFFSET_X = 0.30
 
 function cardboardTex(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
@@ -67,9 +69,55 @@ function shippingLabelTex(): THREE.CanvasTexture {
 }
 
 function preparePillowPhoto(source: THREE.Texture): THREE.Texture {
-  source.colorSpace = THREE.SRGBColorSpace
-  source.needsUpdate = true
-  return source
+  const texture = source.clone()
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.wrapS = THREE.ClampToEdgeWrapping
+  texture.wrapT = THREE.ClampToEdgeWrapping
+
+  // almofadaimagem.jpg is 4160×3055 (landscape); pillow face is portrait (0.44×0.76).
+  // Rotate 90° CW so the landscape photo matches the portrait face, then "cover"
+  // (fill entire face, crop excess) to preserve aspect ratio without distortion.
+  const img = source.image as { width?: number; height?: number } | undefined
+  const imgW = img?.width || 4160
+  const imgH = img?.height || 3055
+  const rotatedAspect = imgH / imgW // w/h after 90° rotation
+  const faceAspect = PILLOW_W / PILLOW_H
+  const range = faceAspect / rotatedAspect // fraction of rotated width shown
+  const offset = (1 - range) / 2
+
+  // Geometry UVs are raw shape coords: u in [-PILLOW_W/2, PILLOW_W/2], v in [-PILLOW_H/2, PILLOW_H/2]
+  // Combined transform: normalize → rotate 90° CW → cover
+  //   s = (v/PILLOW_H + 0.5) * range + offset  →  v * (range/PILLOW_H) + 0.5
+  //   t = 1 - (u/PILLOW_W + 0.5)              →  -u / PILLOW_W + 0.5
+  texture.matrix.set(
+    0, range / PILLOW_H, 0.5,
+    -1 / PILLOW_W, 0, 0.5,
+    0, 0, 1
+  )
+  texture.matrixAutoUpdate = false
+  texture.needsUpdate = true
+  return texture
+}
+
+function polkaDotTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas')
+  c.width = 256; c.height = 256
+  const ctx = c.getContext('2d')!
+  ctx.fillStyle = '#e8a4be'
+  ctx.fillRect(0, 0, 256, 256)
+  ctx.fillStyle = '#ffffff'
+  for (let y = 16; y < 256; y += 32) {
+    for (let x = 16; x < 256; x += 32) {
+      ctx.beginPath()
+      ctx.arc(x + (Math.floor((y / 32) % 2) * 16), y, 4, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.repeat.set(2, 3)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
 }
 
 function playOpenSound() {
@@ -104,51 +152,36 @@ function SasukePillow({ opened }: { opened: boolean }) {
   const prog = useRef(0)
   const sourceTexture = useLoader(THREE.TextureLoader, pillowAssetUrl)
   const pillowTex = useMemo(() => preparePillowPhoto(sourceTexture), [sourceTexture])
+  const geometry = useMemo(() => pillowGeo(), [])
+  const dotsTex = useMemo(() => polkaDotTexture(), [])
+
+  const photoMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ map: pillowTex, roughness: 0.85, side: THREE.FrontSide }),
+    [pillowTex]
+  )
+  const dotsMat = useMemo(
+    () => new THREE.MeshStandardMaterial({ map: dotsTex, roughness: 0.95, side: THREE.DoubleSide }),
+    [dotsTex]
+  )
 
   useFrame((_, dt) => {
     if (!ref.current) return
     const target = opened ? 1 : 0
     prog.current += (target - prog.current) * Math.min(dt * 3.5, 1)
     const p = prog.current
-    // Rise from inside the box up and out
     const startY = WALL + 0.01
     const endY = WALL + PILLOW_T / 2 + 0.02
     ref.current.position.y = startY + (endY - startY) * p
     const s = 0.3 + p * 0.7
     ref.current.scale.setScalar(s)
-    // Slight wobble as it rises
+    ref.current.rotation.x = -Math.PI / 2 + Math.sin(p * Math.PI * 2) * 0.03 * Math.exp(-p * 2)
     ref.current.rotation.z = Math.sin(p * Math.PI * 3) * 0.04 * Math.exp(-p * 2.5)
-    ref.current.rotation.x = Math.sin(p * Math.PI * 2) * 0.03 * Math.exp(-p * 2)
   })
 
   return (
-    <group ref={ref} position={[0, WALL + 0.01, 0]} scale={0.3}>
-      {/* Pillow body with a soft rectangular silhouette */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[PILLOW_W, PILLOW_H, PILLOW_T]} />
-        <meshStandardMaterial color="#e7a9b5" roughness={0.95} />
-      </mesh>
-      {/* The real photo is used on both faces */}
-      <mesh position={[0, 0, PILLOW_T / 2 + 0.003]}>
-        <planeGeometry args={[PILLOW_W, PILLOW_H]} />
-        <meshStandardMaterial map={pillowTex} roughness={0.92} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0, -PILLOW_T / 2 - 0.003]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[PILLOW_W, PILLOW_H]} />
-        <meshStandardMaterial map={pillowTex} roughness={0.92} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Puffed edges */}
-      {([
-        [0, 0, PILLOW_H / 2, PILLOW_W, PILLOW_T, 0.025],
-        [0, 0, -PILLOW_H / 2, PILLOW_W, PILLOW_T, 0.025],
-        [PILLOW_W / 2, 0, 0, 0.025, PILLOW_T, PILLOW_H],
-        [-PILLOW_W / 2, 0, 0, 0.025, PILLOW_T, PILLOW_H],
-      ] as [number, number, number, number, number, number][]).map(([x, y, z, w, h, d], i) => (
-        <mesh key={i} position={[x, y, z]}>
-          <boxGeometry args={[w, h, d]} />
-          <meshStandardMaterial color="#d4a0aa" roughness={0.9} />
-        </mesh>
-      ))}
+    <group ref={ref} position={[PILLOW_OFFSET_X, WALL + 0.08, 0]} scale={0.3}>
+      {/* Body — Sasuke photo on large faces, pink polka dots on the sides */}
+      <mesh geometry={geometry} castShadow receiveShadow material={[photoMat, dotsMat]} />
     </group>
   )
 }

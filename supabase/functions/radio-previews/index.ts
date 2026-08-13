@@ -8,15 +8,15 @@ const corsHeaders = {
 
 const TRACKS: { slug: string; query: string }[] = [
   { slug: "join-me-in-death", query: 'track:"Join Me in Death" artist:"HIM"' },
-  { slug: "potranca", query: 'track:"Potranca" artist:"O Rappa"' },
+  { slug: "potranca", query: 'track:"Potranca" artist:"slipmami"' },
   { slug: "ultraviolence", query: 'track:"Ultraviolence" artist:"Lana Del Rey"' },
   { slug: "ride", query: 'track:"Ride" artist:"Lana Del Rey"' },
   { slug: "let-down", query: 'track:"Let Down" artist:"Radiohead"' },
-  { slug: "fireworks", query: 'track:"Fireworks" artist:"Lana Del Rey"' },
-  { slug: "pisca-duas-vezes", query: 'track:"Pisca Duas Vezes" artist:"O Rappa"' },
-  { slug: "i-love-you", query: 'track:"I Love You" artist:"Lana Del Rey"' },
-  { slug: "ma-cherie", query: 'track:"Ma Cherie" artist:"DJ Snake"' },
-  { slug: "tudo-vai-dar-certo", query: 'track:"Tudo Vai Dar Certo" artist:"O Rappa"' },
+  { slug: "fireworks", query: 'track:"Fireworks" artist:"Mitski"' },
+  { slug: "pisca-duas-vezes", query: 'track:"Pisca Duas Vezes" artist:"NandaTsunami"' },
+  { slug: "i-love-you", query: 'track:"I Love You" artist:"HIM"' },
+  { slug: "ma-cherie", query: 'track:"Au Revoir" artist:"Malace Mizer"' },
+  { slug: "tudo-vai-dar-certo", query: 'track:"Tudo Vai Dar Certo" artist:"Natiruts"' },
 ];
 
 function createSupabaseClient() {
@@ -53,27 +53,12 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = createSupabaseClient();
 
-    const { data: existing } = await supabase
-      .from("radio_tracks")
-      .select("slug,title,artist,album,preview,cover");
-
+    // Always fetch ALL tracks fresh from Deezer.
+    // Deezer preview URLs contain expiry tokens (hdnea=exp=...) that become
+    // 403 after ~24h, so we must never serve cached preview URLs.
     const tracksBySlug: Record<string, { title: string; artist: string; album: string; preview: string; cover: string }> = {};
 
-    if (existing && existing.length > 0) {
-      for (const row of existing) {
-        tracksBySlug[row.slug] = {
-          title: row.title,
-          artist: row.artist,
-          album: row.album,
-          preview: row.preview,
-          cover: row.cover,
-        };
-      }
-    }
-
-    const toFetch = TRACKS.filter((t) => !tracksBySlug[t.slug] || !tracksBySlug[t.slug].preview);
-
-    for (const track of toFetch) {
+    for (const track of TRACKS) {
       const found = await searchDeezer(track.query);
       if (found) {
         tracksBySlug[track.slug] = {
